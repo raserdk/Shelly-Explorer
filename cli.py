@@ -4,6 +4,7 @@ import argparse
 import json
 import math
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 from rich.console import Console
@@ -301,7 +302,11 @@ def cmd_ha_yaml(args: argparse.Namespace) -> None:
         unique_id_prefix=args.unique_id_prefix,
         port=args.port,
     )
-    console.print(yaml_text, highlight=False)
+    if args.out:
+        Path(args.out).write_text(yaml_text, encoding='utf-8')
+        console.print(f'[green]Wrote Home Assistant YAML to {args.out}[/green]')
+        return
+    print(yaml_text, end='')
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -359,6 +364,7 @@ def build_parser() -> argparse.ArgumentParser:
     ha_yaml.add_argument('--name', required=True, help='Friendly sensor name prefix, for example "Gruppe 1"')
     ha_yaml.add_argument('--unique-id-prefix', help='Optional unique_id prefix. Defaults to slugified name.')
     ha_yaml.add_argument('--port', type=int, default=502)
+    ha_yaml.add_argument('--out', help='Write YAML to a UTF-8 file instead of printing to terminal.')
 
     return parser
 
