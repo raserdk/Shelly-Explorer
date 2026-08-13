@@ -24,6 +24,25 @@ def print_dict(title: str, data: dict[str, Any]) -> None:
     console.print(table)
 
 
+def print_modbus_table(title: str, found: list[Any]) -> None:
+    table = Table(title=title)
+    table.add_column('Address')
+    table.add_column('Registers')
+    table.add_column('uint16')
+    table.add_column('float32 ABCD')
+    table.add_column('float32 CDAB')
+    for item in found:
+        decoded = describe_register(item)
+        table.add_row(
+            str(decoded['address']),
+            str(decoded['registers']),
+            str(decoded['uint16']),
+            f'{decoded["float32_abcd"]:.6g}' if decoded['float32_abcd'] is not None else '',
+            f'{decoded["float32_cdab"]:.6g}' if decoded['float32_cdab'] is not None else '',
+        )
+    console.print(table)
+
+
 def cmd_summary(args: argparse.Namespace) -> None:
     device = ShellyDevice(args.host)
     print_dict('Shelly Explorer - Summary', device.summary())
@@ -71,32 +90,23 @@ def cmd_modbus_test(args: argparse.Namespace) -> None:
         return
     scanner = ShellyModbusScanner(args.host, port=args.port)
     slaves = scanner.scan_slave_ids(args.slave_start, args.slave_end)
-    console.print(f'Slave IDs found: {slaves}')
+    if len(slaves) > 1:
+        console.print(f'Slave IDs responding: {slaves}')
+        console.print('[yellow]Device appears to ignore unit id. Using slave/device id 1 by default.[/yellow]')
+    else:
+        console.print(f'Slave IDs found: {slaves}')
 
 
 def cmd_modbus_scan(args: argparse.Namespace) -> None:
     scanner = ShellyModbusScanner(args.host, port=args.port)
-    if args.kind == 'input':
-        found = scanner.scan_input_range(args.start, args.end, slave=args.slave)
-    else:
-        found = scanner.scan_holding_range(args.start, args.end, slave=args.slave)
 
-    table = Table(title=f'Modbus {args.kind} registers {args.start}-{args.end}')
-    table.add_column('Address')
-    table.add_column('Registers')
-    table.add_column('uint16')
-    table.add_column('float32 ABCD')
-    table.add_column('float32 CDAB')
-    for item in found:
-        decoded = describe_register(item)
-        table.add_row(
-            str(decoded['address']),
-            str(decoded['registers']),
-            str(decoded['uint16']),
-            f'{decoded["float32_abcd"]:.6g}' if decoded['float32_abcd'] is not None else '',
-            f'{decoded["float32_cdab"]:.6g}' if decoded['float32_cdab'] is not None else '',
-        )
-    console.print(table)
+    if args.kind in {'input', 'both'}:
+        input_found = scanner.scan_input_range(args.start, args.end, slave=args.slave)
+        print_modbus_table(f'Modbus input registers {args.start}-{args.end}', input_found)
+
+    if args.kind in {'holding', 'both'}:
+        holding_found = scanner.scan_holding_range(args.start, args.end, slave=args.slave)
+        print_modbus_table(f'Modbus holding registers {args.start}-{args.end}', holding_found)
 
 
 def cmd_rpc(args: argparse.Namespace) -> None:
@@ -146,7 +156,7 @@ def build_parser() -> argparse.ArgumentParser:
     modbus_scan = sub.add_parser('modbus-scan')
     modbus_scan.add_argument('--port', type=int, default=502)
     modbus_scan.add_argument('--slave', type=int, default=1)
-    modbus_scan.add_argument('--kind', choices=['input', 'holding'], default='input')
+    modbus_scan.add_argument('--kind', choices=['input', 'holding', 'both'], default='both')
     modbus_scan.add_argument('--start', type=int, default=30000)
     modbus_scan.add_argument('--end', type=int, default=32400)
 
