@@ -232,6 +232,87 @@ python cli.py 192.168.1.1 ha-yaml-scan --subnet 192.168.1.0/24 --names shelly_na
 
 Devices that are not listed in the name mapping file still get IP-based names.
 
+You can also let Shelly Explorer create the first names file from a scan:
+
+```bash
+python cli.py 192.168.1.1 ha-yaml-scan --subnet 192.168.1.0/24 --timeout 4 --write-names shelly_names.yaml --out shelly_modbus.yaml
+```
+
+This writes `shelly_names.yaml` with generated names:
+
+```yaml
+192.168.1.6: Gruppe 1
+192.168.1.19: Gruppe 2
+192.168.1.48: Gruppe 3
+```
+
+If the names file already exists, it is not overwritten unless you add `--force`.
+
+Example generated Home Assistant YAML for one group:
+
+```yaml
+modbus:
+  - name: shelly_em_gruppe_1
+    type: tcp
+    host: 192.168.1.160
+    port: 502
+    sensors:
+      - name: "Gruppe 1 Effekt"
+        unique_id: gruppe_1_power
+        input_type: input
+        address: 2007
+        data_type: float32
+        swap: word
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+      - name: "Gruppe 1 Spænding"
+        unique_id: gruppe_1_voltage
+        input_type: input
+        address: 2003
+        data_type: float32
+        swap: word
+        unit_of_measurement: "V"
+        device_class: voltage
+        state_class: measurement
+      - name: "Gruppe 1 Strøm"
+        unique_id: gruppe_1_current
+        input_type: input
+        address: 2005
+        data_type: float32
+        swap: word
+        unit_of_measurement: "A"
+        device_class: current
+        state_class: measurement
+      - name: "Gruppe 1 Frekvens"
+        unique_id: gruppe_1_frequency
+        input_type: input
+        address: 2016
+        data_type: float32
+        swap: word
+        unit_of_measurement: "Hz"
+        device_class: frequency
+        state_class: measurement
+      - name: "Gruppe 1 Energi"
+        unique_id: gruppe_1_energy
+        input_type: input
+        address: 2310
+        data_type: float32
+        swap: word
+        unit_of_measurement: "Wh"
+        device_class: energy
+        state_class: total_increasing
+      - name: "Gruppe 1 Returneret energi"
+        unique_id: gruppe_1_returned_energy
+        input_type: input
+        address: 2312
+        data_type: float32
+        swap: word
+        unit_of_measurement: "Wh"
+        device_class: energy
+        state_class: total_increasing
+```
+
 If `ha-yaml-scan` does not find any EM-capable Shelly devices, it does not write an empty `modbus:` file. Instead it prints:
 
 ```text
