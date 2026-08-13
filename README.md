@@ -78,6 +78,11 @@ Examples:
 | 32302 | 2302 | EM1Data total active energy |
 | 32310 | 2310 | EM1Data perpetual active energy |
 
+Energy note:
+
+- `32310` is the total/perpetual active energy counter and matches `EM1Data.GetStatus total_act_energy`.
+- `32302` is a shorter period/session-style active energy value and does not match the perpetual total.
+
 The command below prints the known EM1 and EM1Data registers with decoded values:
 
 ```bash
@@ -150,6 +155,22 @@ Compare RPC live values against Modbus register values:
 python cli.py 192.168.1.160 compare
 ```
 
+Example output:
+
+```text
+                               RPC vs Modbus
++--------------------------------------------------------------------------+
+| Name            | RPC        | Modbus     | Diff         | Unit | Status |
+|-----------------+------------+------------+--------------+------+--------|
+| Voltage         | 236.2 V    | 236.244 V  | 0.0442017    | V    | OK     |
+| Current         | 1.065 A    | 1.06515 A  | 0.000147877  | A    | OK     |
+| Active power    | 215.5 W    | 215.512 W  | 0.0118256    | W    | OK     |
+| Frequency       | 50 Hz      | 50.025 Hz  | 0.025013     | Hz   | OK     |
+| Energy total    | 7781.17 Wh | 7781.17 Wh | -0.000566406 | Wh   | OK     |
+| Energy returned | 0 Wh       | 0 Wh       | 0            | Wh   | OK     |
++--------------------------------------------------------------------------+
+```
+
 Scan Modbus registers:
 
 ```bash
@@ -162,10 +183,25 @@ Scan the local network for Shelly devices:
 python cli.py 192.168.1.1 scan-devices --subnet 192.168.1.0/24
 ```
 
+The `host` argument is still required by the shared CLI parser. For `scan-devices`, it is currently unused, so any placeholder IP can be passed, for example `192.168.1.1`.
+
 Show only EM-capable devices during network scan:
 
 ```bash
 python cli.py 192.168.1.1 scan-devices --subnet 192.168.1.0/24 --em-only
+```
+
+Example output:
+
+```text
+                       Shelly devices on 192.168.1.0/24
++-----------------------------------------------------------------------------+
+| IP           | Model             | App      | Version | Modbus | Power     |
+|--------------+-------------------+----------+---------+--------+-----------|
+| 192.168.1.6  | S4EM-001PCEU16    | MiniEMG4 | 2.0.0   | OK     | 0.0 W     |
+| 192.168.1.20 | S4EM-001PCEU16    | MiniEMG4 | 2.0.0   | OK     | 349.0 W   |
+| 192.168.1.85 | S4EM-001PCEU16    | MiniEMG4 | 2.0.0   | OK     | 109.0 W   |
++-----------------------------------------------------------------------------+
 ```
 
 ## Status
