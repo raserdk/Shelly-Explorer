@@ -101,6 +101,19 @@ def format_known_value(value: Any, datatype: str) -> str:
     return str(value)
 
 
+def _diff_text(rpc_value: Any, modbus_value: Any) -> str:
+    if rpc_value is None or modbus_value is None:
+        return ''
+    if isinstance(rpc_value, (int, float)) and isinstance(modbus_value, (int, float)):
+        return f'{modbus_value - rpc_value:.6g}'
+    return ''
+
+
+def _rpc_number(payload: dict[str, Any], key: str) -> float | int | None:
+    value = payload.get(key)
+    return value if isinstance(value, (int, float)) else None
+
+
 def cmd_summary(args: argparse.Namespace) -> None:
     device = ShellyDevice(args.host)
     print_dict('Shelly Explorer - Summary', device.summary())
@@ -197,6 +210,52 @@ def cmd_modbus_known(args: argparse.Namespace) -> None:
     console.print(table)
 
 
+def cmd_compare(args: argparse.Namespace) -> None:
+    device = ShellyDevice(args.host)
+    scanner = ShellyModbusScanner(args.host, port=args.port)
+    em = device.em_status(args.id)
+    emdata = device.em_data_status(args.id)
+
+    rpc_values: dict[int, Any] = {
+        32003: _rpc_number(em, 'voltage'),
+        32005: _rpc_number(em, 'current'),
+        32007: _rpc_number(em, 'act_power'),
+        32009: _rpc_number(em, 'aprt_power'),
+        32011: _rpc_number(em, 'pf'),
+        32016: _rpc_number(em, 'freq'),
+        32310: _rpc_number(emdata, 'total_act_energy'),
+        32312: _rpc_number(emdata, 'total_act_ret_energy'),
+    }
+
+    table = Table(title='RPC vs Modbus')
+    table.add_column('Name')
+    table.add_column('Shelly address')
+    table.add_column('RPC')
+    table.add_column('Modbus')
+    table.add_column('Diff')
+    table.add_column('Unit')
+
+    for shelly_address, name, datatype, unit in KNOWN_MODBUS_REGISTERS:
+        rpc_value = rpc_values.get(shelly_address)
+        address = shelly_address - MODBUS_OFFSET
+        registers = scanner.read_input(address, count=2, slave=args.slave)
+        modbus_value = None
+        if registers is not None:
+            decoded = describe_register(RegisterValue(address=address, registers=registers))
+            modbus_value = known_value(registers, decoded, datatype)
+
+        table.add_row(
+            name,
+            str(shelly_address),
+            format_known_value(rpc_value, datatype),
+            format_known_value(modbus_value, datatype),
+            _diff_text(rpc_value, modbus_value),
+            unit,
+        )
+
+    console.print(table)
+
+
 def cmd_rpc(args: argparse.Namespace) -> None:
     client = ShellyRPCClient(args.host)
     params: dict[str, Any] = {}
@@ -252,6 +311,11 @@ def build_parser() -> argparse.ArgumentParser:
     modbus_known.add_argument('--port', type=int, default=502)
     modbus_known.add_argument('--slave', type=int, default=1)
 
+    compare = sub.add_parser('compare')
+    compare.add_argument('--id', type=int, default=0)
+    compare.add_argument('--port', type=int, default=502)
+    compare.add_argument('--slave', type=int, default=1)
+
     return parser
 
 
@@ -277,6 +341,8 @@ def main() -> None:
         cmd_modbus_scan(args)
     elif command == 'modbus-known':
         cmd_modbus_known(args)
+    elif command == 'compare':
+        cmd_compare(args)
     else:
         parser.error(f'Unknown command: {command}')
 
