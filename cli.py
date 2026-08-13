@@ -11,6 +11,7 @@ from rich.table import Table
 
 from shelly_explorer.device import ShellyDevice
 from shelly_explorer.history import download_rows, export_csv, get_records
+from shelly_explorer.homeassistant import generate_ha_modbus_yaml
 from shelly_explorer.modbus import RegisterValue, ShellyModbusScanner, describe_register, is_port_open
 from shelly_explorer.registers import COMPARE_REGISTERS, KNOWN_MODBUS_REGISTERS, MODBUS_OFFSET
 from shelly_explorer.rpc import ShellyRPCClient
@@ -293,6 +294,16 @@ def cmd_scan_devices(args: argparse.Namespace) -> None:
     console.print(table)
 
 
+def cmd_ha_yaml(args: argparse.Namespace) -> None:
+    yaml_text = generate_ha_modbus_yaml(
+        args.host,
+        name=args.name,
+        unique_id_prefix=args.unique_id_prefix,
+        port=args.port,
+    )
+    console.print(yaml_text, highlight=False)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description='Shelly Explorer')
     parser.add_argument('host', help='Shelly IP address or hostname')
@@ -344,6 +355,11 @@ def build_parser() -> argparse.ArgumentParser:
     scan_devices.add_argument('--workers', type=int, default=64)
     scan_devices.add_argument('--em-only', action='store_true')
 
+    ha_yaml = sub.add_parser('ha-yaml')
+    ha_yaml.add_argument('--name', required=True, help='Friendly sensor name prefix, for example "Gruppe 1"')
+    ha_yaml.add_argument('--unique-id-prefix', help='Optional unique_id prefix. Defaults to slugified name.')
+    ha_yaml.add_argument('--port', type=int, default=502)
+
     return parser
 
 
@@ -373,6 +389,8 @@ def main() -> None:
         cmd_compare(args)
     elif command == 'scan-devices':
         cmd_scan_devices(args)
+    elif command == 'ha-yaml':
+        cmd_ha_yaml(args)
     else:
         parser.error(f'Unknown command: {command}')
 
