@@ -52,7 +52,7 @@ def generate_ha_modbus_hub_yaml(
     port: int = 502,
 ) -> str:
     base = slugify(unique_id_prefix or name)
-    hub_name = f'shelly_em_{base}'
+    hub_name = base if base.startswith('shelly_em_') else f'shelly_em_{base}'
 
     lines = [
         f'  - name: {hub_name}',
