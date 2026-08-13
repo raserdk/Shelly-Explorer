@@ -8,6 +8,8 @@ The first target device is **Shelly EM Mini Gen4**, including Wi-Fi, Zigbee firm
 
 - RPC Explorer
 - Modbus Explorer
+- Network device scanner
+- RPC vs Modbus comparison
 - Local history downloader
 - CSV export
 - Device diagnostics
@@ -142,12 +144,39 @@ Show known EM1 and EM1Data Modbus registers:
 python cli.py 192.168.1.160 modbus-known
 ```
 
+Compare RPC live values against Modbus register values:
+
+```bash
+python cli.py 192.168.1.160 compare
+```
+
 Scan Modbus registers:
 
 ```bash
 python cli.py 192.168.1.160 modbus-scan --start 2000 --end 2320
 ```
 
+Scan the local network for Shelly devices:
+
+```bash
+python cli.py 192.168.1.1 scan-devices --subnet 192.168.1.0/24
+```
+
+Show only EM-capable devices during network scan:
+
+```bash
+python cli.py 192.168.1.1 scan-devices --subnet 192.168.1.0/24 --em-only
+```
+
 ## Status
 
 Very early development. Tested first against Shelly EM Mini Gen4 firmware `2.0.0`.
+
+Currently verified:
+
+- RPC live reads
+- Local history export
+- Known EM1 and EM1Data Modbus register decoding
+- RPC vs Modbus comparison
+- Subnet scanning for Shelly devices
+- EM-only filtering for network scans
