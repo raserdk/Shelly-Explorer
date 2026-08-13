@@ -204,6 +204,24 @@ Example output:
 +-----------------------------------------------------------------------------+
 ```
 
+Generate Home Assistant Modbus YAML for one device:
+
+```bash
+python cli.py 192.168.1.160 ha-yaml --name "Gruppe 1" --out gruppe1.yaml
+```
+
+Generate Home Assistant Modbus YAML for all EM-capable devices on a subnet:
+
+```bash
+python cli.py 192.168.1.1 ha-yaml-scan --subnet 192.168.1.0/24 --out shelly_modbus.yaml
+```
+
+If `ha-yaml-scan` does not find any EM-capable Shelly devices, it does not write an empty `modbus:` file. Instead it prints:
+
+```text
+No EM-capable Shelly devices found
+```
+
 ## Status
 
 Very early development. Tested first against Shelly EM Mini Gen4 firmware `2.0.0`.
@@ -216,3 +234,4 @@ Currently verified:
 - RPC vs Modbus comparison
 - Subnet scanning for Shelly devices
 - EM-only filtering for network scans
+- Home Assistant Modbus YAML generation
