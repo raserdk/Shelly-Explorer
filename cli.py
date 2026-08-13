@@ -267,16 +267,29 @@ def cmd_rpc(args: argparse.Namespace) -> None:
 
 def cmd_scan_devices(args: argparse.Namespace) -> None:
     devices = scan_subnet(args.subnet, timeout=args.timeout, workers=args.workers)
+    if args.em_only:
+        devices = [
+            device
+            for device in devices
+            if (
+                device.voltage is not None
+                or device.current is not None
+                or device.power is not None
+                or device.frequency is not None
+                or 'em' in device.model.lower()
+                or 'em' in device.app.lower()
+            )
+        ]
 
     table = Table(title=f'Shelly devices on {args.subnet}')
-    table.add_column('IP')
-    table.add_column('Model')
-    table.add_column('App')
-    table.add_column('Version')
-    table.add_column('Modbus')
-    table.add_column('Voltage')
-    table.add_column('Power')
-    table.add_column('Frequency')
+    table.add_column('IP', no_wrap=True)
+    table.add_column('Model', no_wrap=True)
+    table.add_column('App', no_wrap=True)
+    table.add_column('Version', no_wrap=True)
+    table.add_column('Modbus', no_wrap=True)
+    table.add_column('Voltage', no_wrap=True)
+    table.add_column('Power', no_wrap=True)
+    table.add_column('Frequency', no_wrap=True)
 
     for device in devices:
         table.add_row(
@@ -342,6 +355,7 @@ def build_parser() -> argparse.ArgumentParser:
     scan_devices.add_argument('--subnet', default='192.168.1.0/24')
     scan_devices.add_argument('--timeout', type=float, default=1.5)
     scan_devices.add_argument('--workers', type=int, default=64)
+    scan_devices.add_argument('--em-only', action='store_true')
 
     return parser
 
