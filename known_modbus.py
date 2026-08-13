@@ -11,19 +11,21 @@ OFFSET = 30000
 
 REGISTERS = [
     (32000, 'EM1 timestamp', 'uint32', ''),
-    (32002, 'EM1 voltage', 'float32_cdab', 'V'),
-    (32004, 'EM1 current', 'float32_cdab', 'A'),
-    (32006, 'EM1 active power', 'float32_cdab', 'W'),
-    (32008, 'EM1 apparent power', 'float32_cdab', 'VA'),
-    (32010, 'EM1 power factor', 'float32_cdab', ''),
-    (32012, 'EM1 reactive power', 'float32_cdab', 'var'),
-    (32014, 'EM1 phase angle', 'float32_cdab', 'deg'),
+    (32002, 'EM1 error', 'uint16', ''),
+    (32003, 'EM1 voltage', 'float32_cdab', 'V'),
+    (32005, 'EM1 current', 'float32_cdab', 'A'),
+    (32007, 'EM1 active power', 'float32_cdab', 'W'),
+    (32009, 'EM1 apparent power', 'float32_cdab', 'VA'),
+    (32011, 'EM1 power factor', 'float32_cdab', ''),
+    (32013, 'EM1 overpower error', 'uint16', ''),
+    (32014, 'EM1 overvoltage error', 'uint16', ''),
+    (32015, 'EM1 overcurrent error', 'uint16', ''),
     (32016, 'EM1 frequency', 'float32_cdab', 'Hz'),
     (32300, 'EM1Data timestamp', 'uint32', ''),
-    (32302, 'EM1Data total active energy', 'float32_cdab', 'kWh'),
-    (32304, 'EM1Data returned energy', 'float32_cdab', 'kWh'),
-    (32306, 'EM1Data lag reactive energy', 'float32_cdab', 'kvarh'),
-    (32308, 'EM1Data lead reactive energy', 'float32_cdab', 'kvarh'),
+    (32302, 'EM1Data total active energy', 'float32_cdab', 'Wh'),
+    (32304, 'EM1Data returned energy', 'float32_cdab', 'Wh'),
+    (32306, 'EM1Data lag reactive energy', 'float32_cdab', 'VARh'),
+    (32308, 'EM1Data lead reactive energy', 'float32_cdab', 'VARh'),
     (32310, 'EM1Data perpetual active energy', 'float32_cdab', 'Wh'),
     (32312, 'EM1Data perpetual returned energy', 'float32_cdab', 'Wh'),
 ]
@@ -32,6 +34,8 @@ REGISTERS = [
 def value_from(decoded: dict, datatype: str):
     if datatype == 'uint32':
         return decoded['uint32']
+    if datatype == 'uint16':
+        return decoded['uint16']
     return decoded[datatype]
 
 
