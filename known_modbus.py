@@ -4,7 +4,7 @@ import argparse
 from rich.console import Console
 from rich.table import Table
 
-from shelly_explorer.modbus import ShellyModbusScanner, describe_register
+from shelly_explorer.modbus import RegisterValue, ShellyModbusScanner, describe_register
 
 console = Console()
 OFFSET = 30000
@@ -57,8 +57,7 @@ def main() -> None:
         if registers is None:
             table.add_row(name, str(shelly_address), str(address), 'no response', '', unit)
             continue
-        dummy = type('RegisterValueLike', (), {'address': address, 'registers': registers})()
-        decoded = describe_register(dummy)
+        decoded = describe_register(RegisterValue(address=address, registers=registers))
         value = value_from(decoded, datatype)
         if isinstance(value, float):
             value_text = f'{value:.6g}'
