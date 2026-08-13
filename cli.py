@@ -315,6 +315,10 @@ def cmd_ha_yaml(args: argparse.Namespace) -> None:
 
 def cmd_ha_yaml_scan(args: argparse.Namespace) -> None:
     devices = scan_subnet(args.subnet, timeout=args.timeout, workers=args.workers, em_only=True)
+    if not devices:
+        console.print('[yellow]No EM-capable Shelly devices found[/yellow]')
+        return
+
     yaml_devices = [
         (device.ip, f'{args.name_prefix} {device.ip}', f'shelly_em_{device.ip.replace(".", "_")}')
         for device in devices
