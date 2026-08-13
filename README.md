@@ -49,6 +49,39 @@ Known history fields:
 - `min_current`
 - `avg_current`
 
+## Verified Modbus support
+
+Shelly EM Mini Gen4 exposes documented EM1 and EM1Data values over Modbus TCP.
+
+Verified on real devices:
+
+- Shelly EM Mini Gen4 with Zigbee firmware, firmware `2.0.0`
+- Shelly EM Mini Gen4 with Matter firmware, firmware `2.0.0`
+
+Important addressing note:
+
+```text
+pymodbus address = Shelly documented Modbus address - 30000
+```
+
+Examples:
+
+| Shelly address | pymodbus address | Value |
+| ---: | ---: | --- |
+| 32000 | 2000 | EM1 timestamp |
+| 32003 | 2003 | EM1 voltage |
+| 32005 | 2005 | EM1 current |
+| 32007 | 2007 | EM1 active power |
+| 32016 | 2016 | EM1 frequency |
+| 32302 | 2302 | EM1Data total active energy |
+| 32310 | 2310 | EM1Data perpetual active energy |
+
+The command below prints the known EM1 and EM1Data registers with decoded values:
+
+```bash
+python cli.py 192.168.1.160 modbus-known
+```
+
 ## Install
 
 ```bash
@@ -103,10 +136,16 @@ Test Modbus TCP:
 python cli.py 192.168.1.160 modbus-test
 ```
 
+Show known EM1 and EM1Data Modbus registers:
+
+```bash
+python cli.py 192.168.1.160 modbus-known
+```
+
 Scan Modbus registers:
 
 ```bash
-python cli.py 192.168.1.160 modbus-scan --start 30000 --end 32400
+python cli.py 192.168.1.160 modbus-scan --start 2000 --end 2320
 ```
 
 ## Status
