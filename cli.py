@@ -133,6 +133,34 @@ def write_yaml_output(yaml_text: str, out: str | None) -> None:
     print(yaml_text, end='')
 
 
+def load_name_map(path: str | None) -> dict[str, str]:
+    if not path:
+        return {}
+
+    file_path = Path(path)
+    text = file_path.read_text(encoding='utf-8')
+
+    if file_path.suffix.lower() == '.json':
+        payload = json.loads(text)
+        if not isinstance(payload, dict):
+            raise ValueError('Name mapping JSON must be an object with IP-to-name entries.')
+        return {str(key): str(value) for key, value in payload.items()}
+
+    names: dict[str, str] = {}
+    for line_number, raw_line in enumerate(text.splitlines(), start=1):
+        line = raw_line.strip()
+        if not line or line.startswith('#'):
+            continue
+        key, separator, value = line.partition(':')
+        if not separator:
+            raise ValueError(f'Invalid names file line {line_number}: expected "IP: Name"')
+        key = key.strip().strip('"\'')
+        value = value.strip().strip('"\'')
+        if key and value:
+            names[key] = value
+    return names
+
+
 def cmd_summary(args: argparse.Namespace) -> None:
     device = ShellyDevice(args.host)
     print_dict('Shelly Explorer - Summary', device.summary())
@@ -319,14 +347,24 @@ def cmd_ha_yaml_scan(args: argparse.Namespace) -> None:
         console.print('[yellow]No EM-capable Shelly devices found[/yellow]')
         return
 
-    yaml_devices = [
-        (device.ip, f'{args.name_prefix} {device.ip}', f'shelly_em_{device.ip.replace(".", "_")}')
-        for device in devices
-    ]
+    name_map = load_name_map(args.names)
+    yaml_devices = []
+    for device in devices:
+        mapped_name = name_map.get(device.ip)
+        if mapped_name:
+            yaml_devices.append((device.ip, mapped_name, None))
+        else:
+            yaml_devices.append(
+                (device.ip, f'{args.name_prefix} {device.ip}', f'shelly_em_{device.ip.replace(".", "_")}')
+            )
+
     yaml_text = generate_ha_modbus_multi_yaml(yaml_devices, port=args.port)
     write_yaml_output(yaml_text, args.out)
     if args.out:
         console.print(f'[green]Included {len(yaml_devices)} EM-capable devices[/green]')
+    if name_map:
+        matched = sum(1 for device in devices if device.ip in name_map)
+        console.print(f'[green]Used {matched} names from {args.names}[/green]')
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -392,6 +430,7 @@ def build_parser() -> argparse.ArgumentParser:
     ha_yaml_scan.add_argument('--workers', type=int, default=64)
     ha_yaml_scan.add_argument('--port', type=int, default=502)
     ha_yaml_scan.add_argument('--name-prefix', default='Shelly EM', help='Friendly name prefix used before each IP address.')
+    ha_yaml_scan.add_argument('--names', help='Optional UTF-8 name mapping file with lines like "192.168.1.160: Gruppe 1".')
     ha_yaml_scan.add_argument('--out', help='Write YAML to a UTF-8 file instead of printing to terminal.')
 
     return parser
