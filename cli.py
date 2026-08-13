@@ -266,20 +266,7 @@ def cmd_rpc(args: argparse.Namespace) -> None:
 
 
 def cmd_scan_devices(args: argparse.Namespace) -> None:
-    devices = scan_subnet(args.subnet, timeout=args.timeout, workers=args.workers)
-    if args.em_only:
-        devices = [
-            device
-            for device in devices
-            if (
-                device.voltage is not None
-                or device.current is not None
-                or device.power is not None
-                or device.frequency is not None
-                or 'em' in device.model.lower()
-                or 'em' in device.app.lower()
-            )
-        ]
+    devices = scan_subnet(args.subnet, timeout=args.timeout, workers=args.workers, em_only=args.em_only)
 
     table = Table(title=f'Shelly devices on {args.subnet}')
     table.add_column('IP', no_wrap=True)

@@ -71,7 +71,23 @@ def scan_one_host(host: str, timeout: float = 1.5) -> DiscoveredShelly | None:
     return device
 
 
-def scan_subnet(subnet: str, timeout: float = 1.5, workers: int = 64) -> list[DiscoveredShelly]:
+def is_em_device(device: DiscoveredShelly) -> bool:
+    return (
+        device.voltage is not None
+        or device.current is not None
+        or device.power is not None
+        or device.frequency is not None
+        or 'em' in device.model.lower()
+        or 'em' in device.app.lower()
+    )
+
+
+def scan_subnet(
+    subnet: str,
+    timeout: float = 1.5,
+    workers: int = 64,
+    em_only: bool = False,
+) -> list[DiscoveredShelly]:
     network = ip_network(subnet, strict=False)
     found: list[DiscoveredShelly] = []
 
@@ -84,5 +100,8 @@ def scan_subnet(subnet: str, timeout: float = 1.5, workers: int = 64) -> list[Di
             result = future.result()
             if result is not None:
                 found.append(result)
+
+    if em_only:
+        found = [device for device in found if is_em_device(device)]
 
     return sorted(found, key=lambda item: tuple(int(part) for part in item.ip.split('.')))
