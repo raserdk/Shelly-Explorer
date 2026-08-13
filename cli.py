@@ -161,6 +161,26 @@ def load_name_map(path: str | None) -> dict[str, str]:
     return names
 
 
+def generated_name_map(devices: list[Any]) -> dict[str, str]:
+    return {
+        device.ip: f'Gruppe {index}'
+        for index, device in enumerate(devices, start=1)
+    }
+
+
+def write_name_map(path: str, name_map: dict[str, str], force: bool = False) -> None:
+    file_path = Path(path)
+    if file_path.exists() and not force:
+        raise FileExistsError(f'{path} already exists. Use --force to overwrite it.')
+
+    lines = [
+        f'{host}: {name}'
+        for host, name in name_map.items()
+    ]
+    file_path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+    console.print(f'[green]Wrote {len(lines)} names to {path}[/green]')
+
+
 def cmd_summary(args: argparse.Namespace) -> None:
     device = ShellyDevice(args.host)
     print_dict('Shelly Explorer - Summary', device.summary())
@@ -348,6 +368,16 @@ def cmd_ha_yaml_scan(args: argparse.Namespace) -> None:
         return
 
     name_map = load_name_map(args.names)
+    if args.write_names:
+        generated_names = generated_name_map(devices)
+        try:
+            write_name_map(args.write_names, generated_names, force=args.force)
+        except FileExistsError as exc:
+            console.print(f'[yellow]{exc}[/yellow]')
+            return
+        if not name_map:
+            name_map = generated_names
+
     yaml_devices = []
     for device in devices:
         mapped_name = name_map.get(device.ip)
@@ -364,7 +394,8 @@ def cmd_ha_yaml_scan(args: argparse.Namespace) -> None:
         console.print(f'[green]Included {len(yaml_devices)} EM-capable devices[/green]')
     if name_map:
         matched = sum(1 for device in devices if device.ip in name_map)
-        console.print(f'[green]Used {matched} names from {args.names}[/green]')
+        name_source = args.names or args.write_names or 'generated names'
+        console.print(f'[green]Used {matched} names from {name_source}[/green]')
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -431,6 +462,8 @@ def build_parser() -> argparse.ArgumentParser:
     ha_yaml_scan.add_argument('--port', type=int, default=502)
     ha_yaml_scan.add_argument('--name-prefix', default='Shelly EM', help='Friendly name prefix used before each IP address.')
     ha_yaml_scan.add_argument('--names', help='Optional UTF-8 name mapping file with lines like "192.168.1.160: Gruppe 1".')
+    ha_yaml_scan.add_argument('--write-names', help='Write detected EM devices to a UTF-8 names file as "IP: Gruppe N".')
+    ha_yaml_scan.add_argument('--force', action='store_true', help='Overwrite an existing --write-names file.')
     ha_yaml_scan.add_argument('--out', help='Write YAML to a UTF-8 file instead of printing to terminal.')
 
     return parser
