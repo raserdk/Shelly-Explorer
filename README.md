@@ -216,6 +216,22 @@ Generate Home Assistant Modbus YAML for all EM-capable devices on a subnet:
 python cli.py 192.168.1.1 ha-yaml-scan --subnet 192.168.1.0/24 --out shelly_modbus.yaml
 ```
 
+Use a name mapping file if you want real group names instead of IP-based names. Create a UTF-8 text file, for example `shelly_names.yaml`:
+
+```yaml
+192.168.1.160: Gruppe 1
+192.168.1.161: Gruppe 2
+192.168.1.162: Gruppe 3
+```
+
+Then pass it with `--names`:
+
+```bash
+python cli.py 192.168.1.1 ha-yaml-scan --subnet 192.168.1.0/24 --names shelly_names.yaml --out shelly_modbus.yaml
+```
+
+Devices that are not listed in the name mapping file still get IP-based names.
+
 If `ha-yaml-scan` does not find any EM-capable Shelly devices, it does not write an empty `modbus:` file. Instead it prints:
 
 ```text
