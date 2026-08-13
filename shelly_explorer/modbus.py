@@ -39,14 +39,14 @@ class RegisterValue:
     def float32_abcd(self) -> float | None:
         if len(self.registers) < 2:
             return None
-        raw = struct.pack('>HH', self.registers[0], self.registers[1])
-        return struct.unpack('>f', raw)[0]
+        raw = struct.pack(">HH", self.registers[0], self.registers[1])
+        return struct.unpack(">f", raw)[0]
 
     def float32_cdab(self) -> float | None:
         if len(self.registers) < 2:
             return None
-        raw = struct.pack('>HH', self.registers[1], self.registers[0])
-        return struct.unpack('>f', raw)[0]
+        raw = struct.pack(">HH", self.registers[1], self.registers[0])
+        return struct.unpack(">f", raw)[0]
 
 
 def is_port_open(host: str, port: int = 502, timeout: float = 2.0) -> bool:
@@ -111,12 +111,8 @@ class ShellyModbusScanner:
         finally:
             client.close()
 
-    def scan_slave_ids(self, start: int = 1, end: int = 10) -> list[int]:
-        """Find responding Modbus unit IDs.
-
-        Shelly usually responds on device/slave id 1. Address 0 is often empty,
-        so we try a few Shelly EM/EMData ranges instead of only address 0.
-        """
+    def probe_slave_ids(self, start: int = 1, end: int = 10) -> list[int]:
+        """Return all unit IDs that produce a Modbus response."""
         probe_addresses = (0, 30000, 31000, 32300)
         found: list[int] = []
         for slave in range(start, end + 1):
@@ -127,6 +123,19 @@ class ShellyModbusScanner:
                 if self.read_holding(address, count=1, slave=slave) is not None:
                     found.append(slave)
                     break
+        return found
+
+    def scan_slave_ids(self, start: int = 1, end: int = 10) -> list[int]:
+        """Find usable Modbus unit IDs.
+
+        Many Shelly Modbus TCP devices answer regardless of unit ID because the
+        IP address already identifies the device. If every probed ID responds,
+        report 1 as the practical default instead of showing a misleading list.
+        """
+        found = self.probe_slave_ids(start, end)
+        expected = list(range(start, end + 1))
+        if found == expected:
+            return [1]
         return found
 
     def scan_input_range(self, start: int, end: int, slave: int = 1) -> list[RegisterValue]:
@@ -148,12 +157,12 @@ class ShellyModbusScanner:
 
 def describe_register(value: RegisterValue) -> dict[str, Any]:
     return {
-        'address': value.address,
-        'registers': value.registers,
-        'uint16': value.uint16,
-        'int16': value.int16,
-        'uint32': value.uint32(),
-        'int32': value.int32(),
-        'float32_abcd': value.float32_abcd(),
-        'float32_cdab': value.float32_cdab(),
+        "address": value.address,
+        "registers": value.registers,
+        "uint16": value.uint16,
+        "int16": value.int16,
+        "uint32": value.uint32(),
+        "int32": value.int32(),
+        "float32_abcd": value.float32_abcd(),
+        "float32_cdab": value.float32_cdab(),
     }
