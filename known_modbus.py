@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 from rich.console import Console
 from rich.table import Table
 
@@ -10,7 +11,7 @@ console = Console()
 OFFSET = 30000
 
 REGISTERS = [
-    (32000, 'EM1 timestamp', 'uint32', ''),
+    (32000, 'EM1 timestamp', 'uint32_cdab', ''),
     (32002, 'EM1 error', 'uint16', ''),
     (32003, 'EM1 voltage', 'float32_cdab', 'V'),
     (32005, 'EM1 current', 'float32_cdab', 'A'),
@@ -21,7 +22,7 @@ REGISTERS = [
     (32014, 'EM1 overvoltage error', 'uint16', ''),
     (32015, 'EM1 overcurrent error', 'uint16', ''),
     (32016, 'EM1 frequency', 'float32_cdab', 'Hz'),
-    (32300, 'EM1Data timestamp', 'uint32', ''),
+    (32300, 'EM1Data timestamp', 'uint32_cdab', ''),
     (32302, 'EM1Data total active energy', 'float32_cdab', 'Wh'),
     (32304, 'EM1Data returned energy', 'float32_cdab', 'Wh'),
     (32306, 'EM1Data lag reactive energy', 'float32_cdab', 'VARh'),
@@ -31,9 +32,27 @@ REGISTERS = [
 ]
 
 
-def value_from(decoded: dict, datatype: str):
+def uint32_cdab(registers: list[int]) -> int | None:
+    if len(registers) < 2:
+        return None
+    return (registers[1] << 16) + registers[0]
+
+
+def timestamp_text(value: int | None) -> str:
+    if value is None:
+        return ''
+    try:
+        stamp = dt.datetime.fromtimestamp(value, tz=dt.timezone.utc)
+    except (OverflowError, OSError, ValueError):
+        return str(value)
+    return f'{value} / {stamp.isoformat()}'
+
+
+def value_from(decoded: dict, registers: list[int], datatype: str):
     if datatype == 'uint32':
         return decoded['uint32']
+    if datatype == 'uint32_cdab':
+        return uint32_cdab(registers)
     if datatype == 'uint16':
         return decoded['uint16']
     return decoded[datatype]
@@ -62,8 +81,10 @@ def main() -> None:
             table.add_row(name, str(shelly_address), str(address), 'no response', '', unit)
             continue
         decoded = describe_register(RegisterValue(address=address, registers=registers))
-        value = value_from(decoded, datatype)
-        if isinstance(value, float):
+        value = value_from(decoded, registers, datatype)
+        if datatype == 'uint32_cdab':
+            value_text = timestamp_text(value)
+        elif isinstance(value, float):
             value_text = f'{value:.6g}'
         else:
             value_text = str(value)
