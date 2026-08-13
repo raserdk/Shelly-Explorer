@@ -14,6 +14,7 @@ from shelly_explorer.history import download_rows, export_csv, get_records
 from shelly_explorer.modbus import RegisterValue, ShellyModbusScanner, describe_register, is_port_open
 from shelly_explorer.registers import COMPARE_REGISTERS, KNOWN_MODBUS_REGISTERS, MODBUS_OFFSET
 from shelly_explorer.rpc import ShellyRPCClient
+from shelly_explorer.scanner import scan_subnet
 
 console = Console()
 
@@ -264,6 +265,34 @@ def cmd_rpc(args: argparse.Namespace) -> None:
     console.print_json(json.dumps(payload, indent=2))
 
 
+def cmd_scan_devices(args: argparse.Namespace) -> None:
+    devices = scan_subnet(args.subnet, timeout=args.timeout, workers=args.workers)
+
+    table = Table(title=f'Shelly devices on {args.subnet}')
+    table.add_column('IP')
+    table.add_column('Model')
+    table.add_column('App')
+    table.add_column('Version')
+    table.add_column('Modbus')
+    table.add_column('Voltage')
+    table.add_column('Power')
+    table.add_column('Frequency')
+
+    for device in devices:
+        table.add_row(
+            device.ip,
+            device.model,
+            device.app,
+            device.version,
+            'OK' if device.modbus else '',
+            f'{device.voltage:.1f} V' if device.voltage is not None else '',
+            f'{device.power:.1f} W' if device.power is not None else '',
+            f'{device.frequency:.2f} Hz' if device.frequency is not None else '',
+        )
+
+    console.print(table)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description='Shelly Explorer')
     parser.add_argument('host', help='Shelly IP address or hostname')
@@ -309,6 +338,11 @@ def build_parser() -> argparse.ArgumentParser:
     compare.add_argument('--port', type=int, default=502)
     compare.add_argument('--slave', type=int, default=1)
 
+    scan_devices = sub.add_parser('scan-devices')
+    scan_devices.add_argument('--subnet', default='192.168.1.0/24')
+    scan_devices.add_argument('--timeout', type=float, default=1.5)
+    scan_devices.add_argument('--workers', type=int, default=64)
+
     return parser
 
 
@@ -336,6 +370,8 @@ def main() -> None:
         cmd_modbus_known(args)
     elif command == 'compare':
         cmd_compare(args)
+    elif command == 'scan-devices':
+        cmd_scan_devices(args)
     else:
         parser.error(f'Unknown command: {command}')
 
