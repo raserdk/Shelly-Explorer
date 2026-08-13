@@ -38,6 +38,15 @@ KNOWN_MODBUS_REGISTERS = [
     (32312, 'EM1Data perpetual returned energy', 'float32_cdab', 'Wh'),
 ]
 
+COMPARE_REGISTERS = [
+    ('Voltage', 32003, 'voltage', 'em1', 'float32_cdab', 'V', 1.0),
+    ('Current', 32005, 'current', 'em1', 'float32_cdab', 'A', 0.15),
+    ('Active power', 32007, 'act_power', 'em1', 'float32_cdab', 'W', 35.0),
+    ('Frequency', 32016, 'freq', 'em1', 'float32_cdab', 'Hz', 0.1),
+    ('Energy total', 32310, 'total_act_energy', 'em1data', 'float32_cdab', 'Wh', 1.0),
+    ('Energy returned', 32312, 'total_act_ret_energy', 'em1data', 'float32_cdab', 'Wh', 1.0),
+]
+
 
 def print_dict(title: str, data: dict[str, Any]) -> None:
     table = Table(title=title)
@@ -101,17 +110,46 @@ def format_known_value(value: Any, datatype: str) -> str:
     return str(value)
 
 
-def _diff_text(rpc_value: Any, modbus_value: Any) -> str:
-    if rpc_value is None or modbus_value is None:
+def format_compare_value(value: Any, unit: str) -> str:
+    if value is None:
         return ''
-    if isinstance(rpc_value, (int, float)) and isinstance(modbus_value, (int, float)):
-        return f'{modbus_value - rpc_value:.6g}'
-    return ''
+    if isinstance(value, float) and math.isnan(value):
+        return 'N/A'
+    if isinstance(value, (int, float)):
+        return f'{value:.6g} {unit}'.strip()
+    return str(value)
+
+
+def compare_status(rpc_value: Any, modbus_value: Any, tolerance: float) -> tuple[str, str]:
+    if rpc_value is None or modbus_value is None:
+        return '', '[red]MISSING[/red]'
+    if isinstance(rpc_value, float) and math.isnan(rpc_value):
+        return '', '[yellow]N/A[/yellow]'
+    if isinstance(modbus_value, float) and math.isnan(modbus_value):
+        return '', '[yellow]N/A[/yellow]'
+
+    diff = float(modbus_value) - float(rpc_value)
+    status = '[green]OK[/green]' if abs(diff) <= tolerance else '[red]DIFF[/red]'
+    return f'{diff:.6g}', status
 
 
 def _rpc_number(payload: dict[str, Any], key: str) -> float | int | None:
     value = payload.get(key)
     return value if isinstance(value, (int, float)) else None
+
+
+def read_known_modbus_value(
+    scanner: ShellyModbusScanner,
+    shelly_address: int,
+    datatype: str,
+    slave: int,
+) -> Any:
+    address = shelly_address - MODBUS_OFFSET
+    registers = scanner.read_input(address, count=2, slave=slave)
+    if registers is None:
+        return None
+    decoded = describe_register(RegisterValue(address=address, registers=registers))
+    return known_value(registers, decoded, datatype)
 
 
 def cmd_summary(args: argparse.Namespace) -> None:
@@ -215,42 +253,27 @@ def cmd_compare(args: argparse.Namespace) -> None:
     scanner = ShellyModbusScanner(args.host, port=args.port)
     em = device.em_status(args.id)
     emdata = device.em_data_status(args.id)
-
-    rpc_values: dict[int, Any] = {
-        32003: _rpc_number(em, 'voltage'),
-        32005: _rpc_number(em, 'current'),
-        32007: _rpc_number(em, 'act_power'),
-        32009: _rpc_number(em, 'aprt_power'),
-        32011: _rpc_number(em, 'pf'),
-        32016: _rpc_number(em, 'freq'),
-        32310: _rpc_number(emdata, 'total_act_energy'),
-        32312: _rpc_number(emdata, 'total_act_ret_energy'),
-    }
+    rpc_sources = {'em1': em, 'em1data': emdata}
 
     table = Table(title='RPC vs Modbus')
     table.add_column('Name')
-    table.add_column('Shelly address')
     table.add_column('RPC')
     table.add_column('Modbus')
     table.add_column('Diff')
     table.add_column('Unit')
+    table.add_column('Status')
 
-    for shelly_address, name, datatype, unit in KNOWN_MODBUS_REGISTERS:
-        rpc_value = rpc_values.get(shelly_address)
-        address = shelly_address - MODBUS_OFFSET
-        registers = scanner.read_input(address, count=2, slave=args.slave)
-        modbus_value = None
-        if registers is not None:
-            decoded = describe_register(RegisterValue(address=address, registers=registers))
-            modbus_value = known_value(registers, decoded, datatype)
-
+    for name, shelly_address, rpc_key, source, datatype, unit, tolerance in COMPARE_REGISTERS:
+        rpc_value = _rpc_number(rpc_sources[source], rpc_key)
+        modbus_value = read_known_modbus_value(scanner, shelly_address, datatype, args.slave)
+        diff, status = compare_status(rpc_value, modbus_value, tolerance)
         table.add_row(
             name,
-            str(shelly_address),
-            format_known_value(rpc_value, datatype),
-            format_known_value(modbus_value, datatype),
-            _diff_text(rpc_value, modbus_value),
+            format_compare_value(rpc_value, unit),
+            format_compare_value(modbus_value, unit),
+            diff,
             unit,
+            status,
         )
 
     console.print(table)
