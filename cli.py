@@ -12,7 +12,7 @@ from rich.table import Table
 
 from shelly_explorer.device import ShellyDevice
 from shelly_explorer.history import download_rows, export_csv, get_records
-from shelly_explorer.homeassistant import generate_ha_modbus_yaml
+from shelly_explorer.homeassistant import generate_ha_modbus_multi_yaml, generate_ha_modbus_yaml
 from shelly_explorer.modbus import RegisterValue, ShellyModbusScanner, describe_register, is_port_open
 from shelly_explorer.registers import COMPARE_REGISTERS, KNOWN_MODBUS_REGISTERS, MODBUS_OFFSET
 from shelly_explorer.rpc import ShellyRPCClient
@@ -123,6 +123,14 @@ def read_known_modbus_value(
         return None
     decoded = describe_register(RegisterValue(address=address, registers=registers))
     return known_value(registers, decoded, datatype)
+
+
+def write_yaml_output(yaml_text: str, out: str | None) -> None:
+    if out:
+        Path(out).write_text(yaml_text, encoding='utf-8')
+        console.print(f'[green]Wrote Home Assistant YAML to {out}[/green]')
+        return
+    print(yaml_text, end='')
 
 
 def cmd_summary(args: argparse.Namespace) -> None:
@@ -302,11 +310,19 @@ def cmd_ha_yaml(args: argparse.Namespace) -> None:
         unique_id_prefix=args.unique_id_prefix,
         port=args.port,
     )
+    write_yaml_output(yaml_text, args.out)
+
+
+def cmd_ha_yaml_scan(args: argparse.Namespace) -> None:
+    devices = scan_subnet(args.subnet, timeout=args.timeout, workers=args.workers, em_only=True)
+    yaml_devices = [
+        (device.ip, f'{args.name_prefix} {device.ip}', f'shelly_em_{device.ip.replace(".", "_")}')
+        for device in devices
+    ]
+    yaml_text = generate_ha_modbus_multi_yaml(yaml_devices, port=args.port)
+    write_yaml_output(yaml_text, args.out)
     if args.out:
-        Path(args.out).write_text(yaml_text, encoding='utf-8')
-        console.print(f'[green]Wrote Home Assistant YAML to {args.out}[/green]')
-        return
-    print(yaml_text, end='')
+        console.print(f'[green]Included {len(yaml_devices)} EM-capable devices[/green]')
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -366,6 +382,14 @@ def build_parser() -> argparse.ArgumentParser:
     ha_yaml.add_argument('--port', type=int, default=502)
     ha_yaml.add_argument('--out', help='Write YAML to a UTF-8 file instead of printing to terminal.')
 
+    ha_yaml_scan = sub.add_parser('ha-yaml-scan')
+    ha_yaml_scan.add_argument('--subnet', default='192.168.1.0/24')
+    ha_yaml_scan.add_argument('--timeout', type=float, default=1.5)
+    ha_yaml_scan.add_argument('--workers', type=int, default=64)
+    ha_yaml_scan.add_argument('--port', type=int, default=502)
+    ha_yaml_scan.add_argument('--name-prefix', default='Shelly EM', help='Friendly name prefix used before each IP address.')
+    ha_yaml_scan.add_argument('--out', help='Write YAML to a UTF-8 file instead of printing to terminal.')
+
     return parser
 
 
@@ -397,6 +421,8 @@ def main() -> None:
         cmd_scan_devices(args)
     elif command == 'ha-yaml':
         cmd_ha_yaml(args)
+    elif command == 'ha-yaml-scan':
+        cmd_ha_yaml_scan(args)
     else:
         parser.error(f'Unknown command: {command}')
 
