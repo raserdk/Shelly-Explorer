@@ -1,11 +1,11 @@
 {
   "domain": "shelly_em_mini_modbus",
-  "name": "Shelly EM Mini Modbus",
+  "name": "Shelly EM Modbus",
   "codeowners": ["@raserdk"],
   "config_flow": true,
   "documentation": "https://github.com/raserdk/Shelly-Explorer",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/raserdk/Shelly-Explorer/issues",
   "requirements": [],
-  "version": "0.1.3"
+  "version": "0.2.0"
 }
