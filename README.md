@@ -4,6 +4,44 @@ Shelly Explorer is a local diagnostic and exploration toolkit for Shelly Gen2/Ge
 
 The first target device is **Shelly EM Mini Gen4**, including Wi-Fi, Zigbee firmware and Matter firmware variants.
 
+![Shelly EM Mini Modbus logo](docs/assets/shelly-em-mini-modbus-logo.svg)
+
+## Home Assistant custom integration
+
+This repository includes an early HACS-compatible Home Assistant custom integration for Shelly EM Mini Gen4 over local Modbus TCP.
+
+Integration path:
+
+```text
+custom_components/shelly_em_mini_modbus
+```
+
+Manual install:
+
+```text
+/config/custom_components/shelly_em_mini_modbus
+```
+
+After copying the integration folder, restart Home Assistant and add:
+
+```text
+Settings -> Devices & services -> Add integration -> Shelly EM Mini Modbus
+```
+
+The integration supports:
+
+- manual IP setup
+- network scan/discovery
+- marking already configured meters in discovery results
+- local Modbus TCP polling without YAML
+- sensors for power, voltage, current, frequency, energy and returned energy
+
+Full integration notes are here:
+
+```text
+docs/hacs-integration.md
+```
+
 ## Goals
 
 - RPC Explorer
@@ -14,6 +52,7 @@ The first target device is **Shelly EM Mini Gen4**, including Wi-Fi, Zigbee firm
 - CSV export
 - Device diagnostics
 - Home Assistant helper tooling
+- Home Assistant custom integration
 - Zigbee / Matter / Wi-Fi comparison
 
 ## What we already verified on Shelly EM Mini Gen4
@@ -332,3 +371,4 @@ Currently verified:
 - Subnet scanning for Shelly devices
 - EM-only filtering for network scans
 - Home Assistant Modbus YAML generation
+- Home Assistant custom integration with manual setup and Modbus discovery
