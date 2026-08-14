@@ -22,6 +22,8 @@ MODEL_NAMES = {
 }
 
 # label, key, Modbus address, unit, device_class, state_class, scale
+# Shelly documents Modbus addresses as 3xxxx input registers.
+# The client below uses the address without the 30000 prefix.
 EM_MINI_GEN4_SENSOR_DEFINITIONS = [
     ("Effekt", "power", 2007, "W", "power", "measurement", 1.0),
     ("Spænding", "voltage", 2003, "V", "voltage", "measurement", 1.0),
@@ -34,8 +36,9 @@ EM_MINI_GEN4_SENSOR_DEFINITIONS = [
 ]
 
 THREE_EM_63_GEN3_SENSOR_DEFINITIONS = [
-    ("Total effekt", "total_power", 1013, "W", "power", "measurement", 1.0),
-    ("Total strøm", "total_current", 1011, "A", "current", "measurement", 1.0),
+    ("Total strøm", "total_current", 1080, "A", "current", "measurement", 1.0),
+    ("Total effekt", "total_power", 1082, "W", "power", "measurement", 1.0),
+    ("Total apparent power", "total_apparent_power", 1084, "VA", "apparent_power", "measurement", 1.0),
     ("Total energi", "total_energy", 1162, "Wh", "energy", "total_increasing", 1.0),
     ("Total energi kWh", "total_energy_kwh", 1162, "kWh", "energy", "total_increasing", 0.001),
     ("Total returneret energi", "total_returned_energy", 1164, "Wh", "energy", "total_increasing", 1.0),
@@ -43,14 +46,17 @@ THREE_EM_63_GEN3_SENSOR_DEFINITIONS = [
     ("Fase A spænding", "phase_a_voltage", 1020, "V", "voltage", "measurement", 1.0),
     ("Fase A strøm", "phase_a_current", 1022, "A", "current", "measurement", 1.0),
     ("Fase A effekt", "phase_a_power", 1024, "W", "power", "measurement", 1.0),
+    ("Fase A apparent power", "phase_a_apparent_power", 1026, "VA", "apparent_power", "measurement", 1.0),
     ("Fase A power factor", "phase_a_power_factor", 1028, None, "power_factor", "measurement", 1.0),
     ("Fase B spænding", "phase_b_voltage", 1040, "V", "voltage", "measurement", 1.0),
     ("Fase B strøm", "phase_b_current", 1042, "A", "current", "measurement", 1.0),
     ("Fase B effekt", "phase_b_power", 1044, "W", "power", "measurement", 1.0),
+    ("Fase B apparent power", "phase_b_apparent_power", 1046, "VA", "apparent_power", "measurement", 1.0),
     ("Fase B power factor", "phase_b_power_factor", 1048, None, "power_factor", "measurement", 1.0),
     ("Fase C spænding", "phase_c_voltage", 1060, "V", "voltage", "measurement", 1.0),
     ("Fase C strøm", "phase_c_current", 1062, "A", "current", "measurement", 1.0),
     ("Fase C effekt", "phase_c_power", 1064, "W", "power", "measurement", 1.0),
+    ("Fase C apparent power", "phase_c_apparent_power", 1066, "VA", "apparent_power", "measurement", 1.0),
     ("Fase C power factor", "phase_c_power_factor", 1068, None, "power_factor", "measurement", 1.0),
 ]
 
