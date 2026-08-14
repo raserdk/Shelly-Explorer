@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import timedelta
 from typing import Any
 
@@ -9,6 +10,8 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .const import CONF_HOST, CONF_PORT, DEFAULT_PORT, DEFAULT_SCAN_INTERVAL, DOMAIN, SENSOR_DEFINITIONS
 from .modbus import ModbusError, ShellyEmMiniModbusClient
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class ShellyEmMiniModbusCoordinator(DataUpdateCoordinator[dict[str, Any]]):
@@ -21,7 +24,7 @@ class ShellyEmMiniModbusCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         super().__init__(
             hass,
-            hass.loop,
+            _LOGGER,
             name=f"{DOMAIN}_{self.host}",
             update_interval=timedelta(seconds=DEFAULT_SCAN_INTERVAL),
         )
