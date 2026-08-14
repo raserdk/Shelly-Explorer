@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Shelly EM Mini Modbus">
+  <defs>
+    <linearGradient id="bg" x1="32" y1="24" x2="224" y2="232" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#00AEEF"/>
+      <stop offset="1" stop-color="#005B96"/>
+    </linearGradient>
+    <linearGradient id="bolt" x1="111" y1="56" x2="150" y2="190" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFE66D"/>
+      <stop offset="1" stop-color="#FFC300"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="18" y="18" width="220" height="220" rx="52" fill="url(#bg)"/>
+
+  <rect x="54" y="50" width="148" height="156" rx="22" fill="#F7FBFF" opacity="0.96"/>
+  <rect x="70" y="68" width="116" height="36" rx="10" fill="#DCEEFF"/>
+
+  <path d="M132 53 88 134h35l-11 69 56-94h-37l1-56z" fill="url(#bolt)" stroke="#0B3D5C" stroke-width="4" stroke-linejoin="round"/>
+
+  <circle cx="84" cy="176" r="7" fill="#005B96"/>
+  <circle cx="128" cy="176" r="7" fill="#005B96"/>
+  <circle cx="172" cy="176" r="7" fill="#005B96"/>
+
+  <path d="M58 217h140" stroke="#0B3D5C" stroke-width="10" stroke-linecap="round" opacity="0.35"/>
+  <path d="M78 226h100" stroke="#0B3D5C" stroke-width="8" stroke-linecap="round" opacity="0.25"/>
+</svg>
