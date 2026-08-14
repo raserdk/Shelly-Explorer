@@ -2,6 +2,12 @@
 
 All notable changes to the Shelly EM Modbus Home Assistant integration are documented here.
 
+## 0.2.5 - 2026-08-14
+
+- Added Shelly 3EM-63 Gen3 internal temperature sensor.
+- Reads temperature from local HTTP RPC `Temperature.GetStatus?id=0` using the `tC` value.
+- Keeps electrical values on Modbus and only uses RPC for internal temperature.
+
 ## 0.2.4 - 2026-08-14
 
 - Use verified Shelly 3EM-63 Gen3 direct total registers from local Modbus testing.
