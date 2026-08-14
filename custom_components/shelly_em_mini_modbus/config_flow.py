@@ -112,6 +112,23 @@ class ShellyEmMiniModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._scan_results: dict[str, DiscoveredDevice] = {}
         self._scan_port = DEFAULT_PORT
 
+    def _configured_hosts(self) -> set[str]:
+        """Return hosts that are already configured for this integration."""
+        configured_hosts: set[str] = set()
+        for entry in self._async_current_entries():
+            if entry.unique_id:
+                configured_hosts.add(entry.unique_id)
+            host = entry.data.get(CONF_HOST)
+            if isinstance(host, str):
+                configured_hosts.add(host)
+        return configured_hosts
+
+    def _discovery_label(self, device: DiscoveredDevice, configured_hosts: set[str]) -> str:
+        """Return a label for a discovered device, including configuration status."""
+        if device.host in configured_hosts:
+            return f"{device.label} - already configured"
+        return f"{device.label} - new"
+
     async def async_step_user(self, user_input: dict[str, object] | None = None):
         if user_input is not None:
             setup_method = str(user_input[CONF_SETUP_METHOD])
@@ -184,7 +201,11 @@ class ShellyEmMiniModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 if not devices:
                     errors["base"] = "no_devices_found"
                 else:
-                    self._scan_results = {device.label: device for device in devices}
+                    configured_hosts = self._configured_hosts()
+                    self._scan_results = {
+                        self._discovery_label(device, configured_hosts): device
+                        for device in devices
+                    }
                     return await self.async_step_pick()
 
         return self.async_show_form(
