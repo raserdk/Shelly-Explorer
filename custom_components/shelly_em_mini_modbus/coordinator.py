@@ -57,7 +57,7 @@ class ShellyEmMiniModbusCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         for attempt in range(MODBUS_RETRIES + 1):
             try:
                 return self._read_values()
-            except (OSError, ModbusError) as exc:
+            except OSError as exc:
                 last_error = exc
                 if attempt < MODBUS_RETRIES:
                     time.sleep(0.4)
@@ -67,9 +67,28 @@ class ShellyEmMiniModbusCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     def _read_values(self) -> dict[str, Any]:
         data: dict[str, Any] = {}
-        raw_values: dict[int, float] = {}
+        raw_values: dict[int, float | None] = {}
+        successful_reads = 0
+
         for _label, key, address, _unit, _device_class, _state_class, scale in self.sensor_definitions:
             if address not in raw_values:
-                raw_values[address] = self.client.read_float32_cdab(address)
-            data[key] = raw_values[address] * scale
+                try:
+                    raw_values[address] = self.client.read_float32_cdab(address)
+                    successful_reads += 1
+                except ModbusError as exc:
+                    raw_values[address] = None
+                    _LOGGER.debug(
+                        "Unsupported or unreadable Modbus register %s for %s (%s): %s",
+                        address,
+                        self.host,
+                        self.model,
+                        exc,
+                    )
+
+            raw_value = raw_values[address]
+            data[key] = raw_value * scale if raw_value is not None else None
+
+        if successful_reads == 0:
+            raise ModbusError("No Modbus registers could be read")
+
         return data
