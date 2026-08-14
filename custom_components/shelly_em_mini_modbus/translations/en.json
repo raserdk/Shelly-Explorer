@@ -1,0 +1,22 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add Shelly EM Mini Modbus",
+        "description": "Enter the local IP address and a friendly name for the meter.",
+        "data": {
+          "host": "IP address",
+          "name": "Name",
+          "port": "Modbus TCP port"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not connect to the device over Modbus TCP.",
+      "unknown": "Unexpected error"
+    },
+    "abort": {
+      "already_configured": "This device is already configured"
+    }
+  }
+}
