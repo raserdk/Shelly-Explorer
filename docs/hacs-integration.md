@@ -1,5 +1,9 @@
 # Shelly EM Mini Modbus Home Assistant integration
 
+<p align="center">
+  <img src="assets/shelly-em-mini-modbus-logo.svg" alt="Shelly EM Mini Modbus" width="520">
+</p>
+
 This repository includes an early Home Assistant custom integration for Shelly EM Mini Gen4 over local Modbus TCP.
 
 ## Manual install
@@ -82,6 +86,20 @@ Each configured meter creates these sensors:
 - Frekvens
 - Energi
 - Returneret energi
+
+## Logo assets
+
+The integration includes a small local SVG icon in:
+
+```text
+custom_components/shelly_em_mini_modbus/icon.svg
+```
+
+A wider documentation logo is available in:
+
+```text
+docs/assets/shelly-em-mini-modbus-logo.svg
+```
 
 ## Notes
 
