@@ -125,9 +125,8 @@ class ShellyEmMiniModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     def _discovery_label(self, device: DiscoveredDevice, configured_hosts: set[str]) -> str:
         """Return a label for a discovered device, including configuration status."""
-        if device.host in configured_hosts:
-            return f"{device.label} - already configured"
-        return f"{device.label} - new"
+        status = "konfigureret" if device.host in configured_hosts else "ny"
+        return f"{device.label} - {status}"
 
     async def async_step_user(self, user_input: dict[str, object] | None = None):
         if user_input is not None:
@@ -142,8 +141,8 @@ class ShellyEmMiniModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 {
                     vol.Required(CONF_SETUP_METHOD, default=SETUP_METHOD_SCAN): vol.In(
                         {
-                            SETUP_METHOD_SCAN: "Scan network",
-                            SETUP_METHOD_MANUAL: "Manual IP",
+                            SETUP_METHOD_SCAN: "Scan netværk",
+                            SETUP_METHOD_MANUAL: "Manuel IP",
                         }
                     ),
                 }
