@@ -3,7 +3,9 @@ from __future__ import annotations
 DOMAIN = "shelly_em_mini_modbus"
 DEFAULT_NAME = "Shelly EM Mini"
 DEFAULT_PORT = 502
-DEFAULT_SCAN_INTERVAL = 10
+DEFAULT_SCAN_INTERVAL = 30
+DEFAULT_MODBUS_TIMEOUT = 5.0
+MODBUS_RETRIES = 1
 
 CONF_HOST = "host"
 CONF_NAME = "name"
