@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import json
 import logging
 import time
 from datetime import timedelta
 from typing import Any
+from urllib.error import URLError
+from urllib.request import urlopen
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -20,6 +23,7 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     MODBUS_RETRIES,
+    RPC_TEMPERATURE_C,
     SENSOR_DEFINITIONS_BY_MODEL,
 )
 from .modbus import ModbusError, ShellyEmMiniModbusClient
@@ -28,7 +32,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class ShellyEmMiniModbusCoordinator(DataUpdateCoordinator[dict[str, Any]]):
-    """Coordinate Modbus polling for one Shelly energy meter device."""
+    """Coordinate polling for one Shelly energy meter device."""
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         self.host: str = entry.data[CONF_HOST]
@@ -52,7 +56,7 @@ class ShellyEmMiniModbusCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         try:
             return await self.hass.async_add_executor_job(self._read_values_with_retry)
         except (OSError, ModbusError) as exc:
-            raise UpdateFailed(f"Failed to read Shelly energy meter Modbus data from {self.host}: {exc}") from exc
+            raise UpdateFailed(f"Failed to read Shelly energy meter data from {self.host}: {exc}") from exc
 
     def _read_values_with_retry(self) -> dict[str, Any]:
         last_error: OSError | ModbusError | None = None
@@ -65,33 +69,38 @@ class ShellyEmMiniModbusCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     time.sleep(0.4)
         if last_error is not None:
             raise last_error
-        raise ModbusError("Modbus polling failed without an error")
+        raise ModbusError("Polling failed without an error")
 
     def _read_values(self) -> dict[str, Any]:
         data: dict[str, Any] = {}
         raw_values: dict[int, float | None] = {}
         successful_reads = 0
 
-        for _label, key, address, _unit, _device_class, _state_class, scale in self.sensor_definitions:
-            if address is None:
+        for _label, key, source, _unit, _device_class, _state_class, scale in self.sensor_definitions:
+            if source == RPC_TEMPERATURE_C:
+                temperature = self._read_rpc_temperature_c()
+                data[key] = temperature * scale if temperature is not None else None
+                continue
+
+            if not isinstance(source, int):
                 data[key] = None
                 continue
 
-            if address not in raw_values:
+            if source not in raw_values:
                 try:
-                    raw_values[address] = self.client.read_float32_cdab(address)
+                    raw_values[source] = self.client.read_float32_cdab(source)
                     successful_reads += 1
                 except ModbusError as exc:
-                    raw_values[address] = None
+                    raw_values[source] = None
                     _LOGGER.debug(
                         "Unsupported or unreadable Modbus register %s for %s (%s): %s",
-                        address,
+                        source,
                         self.host,
                         self.model,
                         exc,
                     )
 
-            raw_value = raw_values[address]
+            raw_value = raw_values[source]
             data[key] = raw_value * scale if raw_value is not None else None
 
         for target_key, source_keys in self.computed_sums.items():
@@ -106,3 +115,16 @@ class ShellyEmMiniModbusCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise ModbusError("No Modbus registers could be read")
 
         return data
+
+    def _read_rpc_temperature_c(self) -> float | None:
+        """Read Shelly internal temperature over local HTTP RPC."""
+        url = f"http://{self.host}/rpc/Temperature.GetStatus?id=0"
+        try:
+            with urlopen(url, timeout=DEFAULT_MODBUS_TIMEOUT) as response:
+                payload = json.loads(response.read().decode())
+        except (OSError, URLError, TimeoutError, json.JSONDecodeError) as exc:
+            _LOGGER.debug("Failed to read RPC temperature from %s: %s", self.host, exc)
+            return None
+
+        value = payload.get("tC")
+        return float(value) if isinstance(value, int | float) else None
