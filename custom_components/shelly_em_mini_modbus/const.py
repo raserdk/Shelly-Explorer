@@ -21,7 +21,9 @@ MODEL_NAMES = {
     MODEL_3EM_63_GEN3: "3EM-63 Gen3",
 }
 
-# label, key, Modbus address, unit, device_class, state_class, scale
+RPC_TEMPERATURE_C = "rpc_temperature_c"
+
+# label, key, Modbus address/RPC source, unit, device_class, state_class, scale
 # Shelly documents Modbus addresses as 3xxxx input registers.
 # The client below uses the address without the 30000 prefix.
 EM_MINI_GEN4_SENSOR_DEFINITIONS = [
@@ -43,6 +45,7 @@ THREE_EM_63_GEN3_SENSOR_DEFINITIONS = [
     ("Total energi kWh", "total_energy_kwh", 1162, "kWh", "energy", "total_increasing", 0.001),
     ("Total returneret energi", "total_returned_energy", 1164, "Wh", "energy", "total_increasing", 1.0),
     ("Total returneret energi kWh", "total_returned_energy_kwh", 1164, "kWh", "energy", "total_increasing", 0.001),
+    ("Intern temperatur", "internal_temperature", RPC_TEMPERATURE_C, "°C", "temperature", "measurement", 1.0),
     ("Fase A spænding", "phase_a_voltage", 1020, "V", "voltage", "measurement", 1.0),
     ("Fase A strøm", "phase_a_current", 1022, "A", "current", "measurement", 1.0),
     ("Fase A effekt", "phase_a_power", 1024, "W", "power", "measurement", 1.0),
