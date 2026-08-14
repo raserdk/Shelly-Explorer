@@ -2,6 +2,12 @@
 
 All notable changes to the Shelly EM Modbus Home Assistant integration are documented here.
 
+## 0.2.2 - 2026-08-14
+
+- Do not fail a full device update when one configured Modbus register returns an exception.
+- Unsupported or unreadable registers now return unavailable values for their individual sensors.
+- Intended to make Shelly 3EM-63 Gen3 testing safer across firmware/register differences.
+
 ## 0.2.1 - 2026-08-14
 
 - Corrected Shelly 3EM-63 Gen3 total current and total active power Modbus registers.
