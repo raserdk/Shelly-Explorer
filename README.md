@@ -330,3 +330,11 @@ Verified:
 - Home Assistant Modbus YAML generation
 - Home Assistant custom integration with manual setup and Modbus discovery
 - HACS custom repository install
+
+## License
+
+This project is licensed under the MIT License.
+
+You are free to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the software, as long as the copyright and license notice are kept with the software.
+
+See [LICENSE](LICENSE) for the full license text.
