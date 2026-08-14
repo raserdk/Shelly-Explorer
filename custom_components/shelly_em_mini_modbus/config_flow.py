@@ -115,7 +115,7 @@ def _probe_3em_63(client: ShellyEmMiniModbusClient, host: str) -> DiscoveredDevi
         return None
 
     try:
-        power = client.read_float32_cdab(1013)
+        power = client.read_float32_cdab(1082)
     except (OSError, ModbusError):
         power = None
 
