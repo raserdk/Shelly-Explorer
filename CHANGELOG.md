@@ -1,6 +1,14 @@
 # Changelog
 
-All notable changes to the Shelly EM Mini Modbus Home Assistant integration are documented here.
+All notable changes to the Shelly EM Modbus Home Assistant integration are documented here.
+
+## 0.2.0 - 2026-08-14
+
+- Added initial Shelly 3EM-63 Gen3 support.
+- Added model profiles so EM Mini Gen4 and 3EM-63 Gen3 can use different Modbus registers.
+- Added automatic discovery of supported model type during scan and manual setup.
+- Added 3EM-63 Gen3 total power, total current, total energy, returned energy, and per-phase voltage/current/power/power-factor sensors.
+- Renamed the integration display name to Shelly EM Modbus.
 
 ## 0.1.3 - 2026-08-14
 
