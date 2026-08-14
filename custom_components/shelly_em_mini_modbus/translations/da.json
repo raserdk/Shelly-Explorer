@@ -3,16 +3,41 @@
     "step": {
       "user": {
         "title": "Tilføj Shelly EM Mini Modbus",
+        "description": "Vælg om du vil scanne netværket eller indtaste IP-adressen manuelt.",
+        "data": {
+          "setup_method": "Opsætningsmetode"
+        }
+      },
+      "manual": {
+        "title": "Tilføj manuelt",
         "description": "Indtast lokal IP-adresse og et venligt navn til måleren.",
         "data": {
           "host": "IP-adresse",
           "name": "Navn",
           "port": "Modbus TCP-port"
         }
+      },
+      "scan": {
+        "title": "Scan netværk",
+        "description": "Scan et lokalt subnet efter Shelly EM Mini-lignende Modbus-enheder.",
+        "data": {
+          "subnet": "Subnet",
+          "port": "Modbus TCP-port"
+        }
+      },
+      "pick": {
+        "title": "Vælg måler",
+        "description": "Vælg en fundet måler og giv den et navn.",
+        "data": {
+          "device": "Fundet måler",
+          "name": "Navn"
+        }
       }
     },
     "error": {
       "cannot_connect": "Kunne ikke forbinde til enheden via Modbus TCP.",
+      "invalid_subnet": "Subnet kan ikke scannes. Brug f.eks. 192.168.1.0/24.",
+      "no_devices_found": "Der blev ikke fundet nogen Shelly EM Mini-lignende Modbus-enheder.",
       "unknown": "Uventet fejl"
     },
     "abort": {
