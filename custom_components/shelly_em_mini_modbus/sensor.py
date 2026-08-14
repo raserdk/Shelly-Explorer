@@ -27,7 +27,7 @@ SENSOR_DESCRIPTIONS: tuple[ShellyEmMiniSensorEntityDescription, ...] = tuple(
         device_class=device_class,
         state_class=state_class,
     )
-    for label, key, _address, unit, device_class, state_class in SENSOR_DEFINITIONS
+    for label, key, _address, unit, device_class, state_class, _scale in SENSOR_DEFINITIONS
 )
 
 
