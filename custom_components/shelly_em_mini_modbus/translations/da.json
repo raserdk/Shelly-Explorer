@@ -1,0 +1,22 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Tilføj Shelly EM Mini Modbus",
+        "description": "Indtast lokal IP-adresse og et venligt navn til måleren.",
+        "data": {
+          "host": "IP-adresse",
+          "name": "Navn",
+          "port": "Modbus TCP-port"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Kunne ikke forbinde til enheden via Modbus TCP.",
+      "unknown": "Uventet fejl"
+    },
+    "abort": {
+      "already_configured": "Denne enhed er allerede konfigureret"
+    }
+  }
+}
