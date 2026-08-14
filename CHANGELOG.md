@@ -2,6 +2,11 @@
 
 All notable changes to the Shelly EM Modbus Home Assistant integration are documented here.
 
+## 0.2.3 - 2026-08-14
+
+- Changed Shelly 3EM-63 Gen3 total current, total active power, and total apparent power to calculated values from phase A+B+C.
+- Avoided unsupported total Modbus registers on 3EM firmware where direct total power/current registers return Modbus exception 2.
+
 ## 0.2.2 - 2026-08-14
 
 - Do not fail a full device update when one configured Modbus register returns an exception.
