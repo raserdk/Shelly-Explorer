@@ -11,7 +11,18 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 
-from .const import CONF_HOST, CONF_NAME, CONF_PORT, DEFAULT_NAME, DEFAULT_PORT, DOMAIN
+from .const import (
+    CONF_HOST,
+    CONF_MODEL,
+    CONF_NAME,
+    CONF_PORT,
+    DEFAULT_NAME,
+    DEFAULT_PORT,
+    DOMAIN,
+    MODEL_3EM_63_GEN3,
+    MODEL_EM_MINI_GEN4,
+    MODEL_NAMES,
+)
 from .modbus import ModbusError, ShellyEmMiniModbusClient
 
 CONF_SETUP_METHOD = "setup_method"
@@ -35,43 +46,49 @@ class InvalidSubnet(Exception):
 
 @dataclass(frozen=True)
 class DiscoveredDevice:
-    """A Shelly EM Mini-like Modbus device discovered on the network."""
+    """A supported Shelly Modbus energy meter discovered on the network."""
 
     host: str
+    model: str
     power: float | None
-    voltage: float
-    frequency: float
+    voltage: float | None
+    frequency: float | None = None
 
     @property
     def label(self) -> str:
+        model_name = MODEL_NAMES.get(self.model, self.model)
         power = f"{self.power:.0f} W" if self.power is not None and math.isfinite(self.power) else "? W"
-        return f"{self.host} - {power}, {self.voltage:.0f} V, {self.frequency:.1f} Hz"
+        voltage = f", {self.voltage:.0f} V" if self.voltage is not None and math.isfinite(self.voltage) else ""
+        frequency = f", {self.frequency:.1f} Hz" if self.frequency is not None and math.isfinite(self.frequency) else ""
+        return f"{self.host} - {model_name} - {power}{voltage}{frequency}"
 
 
-async def validate_input(hass: HomeAssistant, data: dict[str, object]) -> None:
+async def validate_input(hass: HomeAssistant, data: dict[str, object]) -> str:
     host = str(data[CONF_HOST])
     port = int(data.get(CONF_PORT, DEFAULT_PORT))
-    client = ShellyEmMiniModbusClient(host, port)
 
     try:
-        await hass.async_add_executor_job(client.read_float32_cdab, 2007)
+        return await hass.async_add_executor_job(detect_device_model, host, port)
     except (OSError, ModbusError) as exc:
         raise CannotConnect from exc
 
 
-def _probe_host(host: str, port: int) -> DiscoveredDevice | None:
-    client = ShellyEmMiniModbusClient(host, port, timeout=SCAN_TIMEOUT)
+def _valid_voltage(value: float) -> bool:
+    return math.isfinite(value) and 180 <= value <= 260
+
+
+def _valid_frequency(value: float) -> bool:
+    return math.isfinite(value) and 45 <= value <= 55
+
+
+def _probe_em_mini(client: ShellyEmMiniModbusClient, host: str) -> DiscoveredDevice | None:
     try:
         voltage = client.read_float32_cdab(2003)
         frequency = client.read_float32_cdab(2016)
     except (OSError, ModbusError):
         return None
 
-    if not math.isfinite(voltage) or not math.isfinite(frequency):
-        return None
-    if not 180 <= voltage <= 260:
-        return None
-    if not 45 <= frequency <= 55:
+    if not _valid_voltage(voltage) or not _valid_frequency(frequency):
         return None
 
     try:
@@ -79,7 +96,51 @@ def _probe_host(host: str, port: int) -> DiscoveredDevice | None:
     except (OSError, ModbusError):
         power = None
 
-    return DiscoveredDevice(host=host, power=power, voltage=voltage, frequency=frequency)
+    return DiscoveredDevice(
+        host=host,
+        model=MODEL_EM_MINI_GEN4,
+        power=power,
+        voltage=voltage,
+        frequency=frequency,
+    )
+
+
+def _probe_3em_63(client: ShellyEmMiniModbusClient, host: str) -> DiscoveredDevice | None:
+    try:
+        phase_a_voltage = client.read_float32_cdab(1020)
+    except (OSError, ModbusError):
+        return None
+
+    if not _valid_voltage(phase_a_voltage):
+        return None
+
+    try:
+        power = client.read_float32_cdab(1013)
+    except (OSError, ModbusError):
+        power = None
+
+    return DiscoveredDevice(
+        host=host,
+        model=MODEL_3EM_63_GEN3,
+        power=power,
+        voltage=phase_a_voltage,
+    )
+
+
+def probe_host(host: str, port: int, timeout: float = SCAN_TIMEOUT) -> DiscoveredDevice | None:
+    client = ShellyEmMiniModbusClient(host, port, timeout=timeout)
+    return _probe_3em_63(client, host) or _probe_em_mini(client, host)
+
+
+def detect_device_model(host: str, port: int) -> str:
+    device = probe_host(host, port, timeout=2.5)
+    if device is None:
+        raise ModbusError("No supported Shelly Modbus energy meter detected")
+    return device.model
+
+
+def _probe_host(host: str, port: int) -> DiscoveredDevice | None:
+    return probe_host(host, port)
 
 
 def discover_devices(subnet: str, port: int) -> list[DiscoveredDevice]:
@@ -104,7 +165,7 @@ def discover_devices(subnet: str, port: int) -> list[DiscoveredDevice]:
 
 
 class ShellyEmMiniModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for Shelly EM Mini Modbus."""
+    """Handle a config flow for Shelly Modbus energy meters."""
 
     VERSION = 1
 
@@ -162,12 +223,13 @@ class ShellyEmMiniModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._abort_if_unique_id_configured()
 
             try:
-                await validate_input(self.hass, data)
+                model = await validate_input(self.hass, data)
             except CannotConnect:
                 errors["base"] = "cannot_connect"
             except Exception:  # noqa: BLE001
                 errors["base"] = "unknown"
             else:
+                data[CONF_MODEL] = model
                 return self.async_create_entry(title=name, data=data)
 
         return self.async_show_form(
@@ -225,7 +287,12 @@ class ShellyEmMiniModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             label = str(user_input[CONF_DEVICE])
             name = str(user_input[CONF_NAME]).strip()
             device = self._scan_results[label]
-            data = {CONF_HOST: device.host, CONF_NAME: name, CONF_PORT: self._scan_port}
+            data = {
+                CONF_HOST: device.host,
+                CONF_NAME: name,
+                CONF_PORT: self._scan_port,
+                CONF_MODEL: device.model,
+            }
 
             await self.async_set_unique_id(device.host)
             self._abort_if_unique_id_configured()
