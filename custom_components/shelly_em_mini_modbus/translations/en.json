@@ -3,16 +3,41 @@
     "step": {
       "user": {
         "title": "Add Shelly EM Mini Modbus",
+        "description": "Choose whether to scan the network or enter the IP address manually.",
+        "data": {
+          "setup_method": "Setup method"
+        }
+      },
+      "manual": {
+        "title": "Add manually",
         "description": "Enter the local IP address and a friendly name for the meter.",
         "data": {
           "host": "IP address",
           "name": "Name",
           "port": "Modbus TCP port"
         }
+      },
+      "scan": {
+        "title": "Scan network",
+        "description": "Scan a local subnet for Shelly EM Mini-like Modbus devices.",
+        "data": {
+          "subnet": "Subnet",
+          "port": "Modbus TCP port"
+        }
+      },
+      "pick": {
+        "title": "Choose meter",
+        "description": "Choose a discovered meter and give it a name.",
+        "data": {
+          "device": "Discovered meter",
+          "name": "Name"
+        }
       }
     },
     "error": {
       "cannot_connect": "Could not connect to the device over Modbus TCP.",
+      "invalid_subnet": "The subnet cannot be scanned. Use for example 192.168.1.0/24.",
+      "no_devices_found": "No Shelly EM Mini-like Modbus devices were found.",
       "unknown": "Unexpected error"
     },
     "abort": {
