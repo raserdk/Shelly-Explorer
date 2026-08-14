@@ -2,6 +2,14 @@
 
 All notable changes to the Shelly EM Modbus Home Assistant integration are documented here.
 
+## 0.2.4 - 2026-08-14
+
+- Use verified Shelly 3EM-63 Gen3 direct total registers from local Modbus testing.
+- Set total current to register `31011` / address `1011`.
+- Set total active power to register `31013` / address `1013`.
+- Set total apparent power to register `31015` / address `1015`.
+- Keep `31080`, `31082`, and `31084` unused because they return Modbus exception 2 on tested 3EM-63 Gen3 firmware 2.0.0.
+
 ## 0.2.3 - 2026-08-14
 
 - Changed Shelly 3EM-63 Gen3 total current, total active power, and total apparent power to calculated values from phase A+B+C.
