@@ -10,6 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
+    COMPUTED_SUMS_BY_MODEL,
     CONF_HOST,
     CONF_MODEL,
     CONF_PORT,
@@ -37,6 +38,7 @@ class ShellyEmMiniModbusCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self.model,
             SENSOR_DEFINITIONS_BY_MODEL[DEFAULT_MODEL],
         )
+        self.computed_sums = COMPUTED_SUMS_BY_MODEL.get(self.model, {})
         self.client = ShellyEmMiniModbusClient(self.host, self.port, timeout=DEFAULT_MODBUS_TIMEOUT)
 
         super().__init__(
@@ -71,6 +73,10 @@ class ShellyEmMiniModbusCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         successful_reads = 0
 
         for _label, key, address, _unit, _device_class, _state_class, scale in self.sensor_definitions:
+            if address is None:
+                data[key] = None
+                continue
+
             if address not in raw_values:
                 try:
                     raw_values[address] = self.client.read_float32_cdab(address)
@@ -87,6 +93,14 @@ class ShellyEmMiniModbusCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
             raw_value = raw_values[address]
             data[key] = raw_value * scale if raw_value is not None else None
+
+        for target_key, source_keys in self.computed_sums.items():
+            source_values = [data.get(source_key) for source_key in source_keys]
+            data[target_key] = (
+                sum(source_values)
+                if all(isinstance(value, int | float) for value in source_values)
+                else None
+            )
 
         if successful_reads == 0:
             raise ModbusError("No Modbus registers could be read")
