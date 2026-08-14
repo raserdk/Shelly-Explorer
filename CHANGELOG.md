@@ -2,6 +2,13 @@
 
 All notable changes to the Shelly EM Mini Modbus Home Assistant integration are documented here.
 
+## 0.1.3 - 2026-08-14
+
+- Increased the default polling interval from 10 seconds to 30 seconds.
+- Increased the Modbus timeout for normal polling.
+- Added one retry before a polling update is marked as failed.
+- Intended to reduce sporadic Wi-Fi Modbus timeout warnings.
+
 ## 0.1.2 - 2026-08-14
 
 - Added kWh energy sensors beside the existing Wh sensors.
