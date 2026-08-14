@@ -24,7 +24,6 @@ MODEL_NAMES = {
 # label, key, Modbus address, unit, device_class, state_class, scale
 # Shelly documents Modbus addresses as 3xxxx input registers.
 # The client below uses the address without the 30000 prefix.
-# Use address None for sensors calculated from other sensor values.
 EM_MINI_GEN4_SENSOR_DEFINITIONS = [
     ("Effekt", "power", 2007, "W", "power", "measurement", 1.0),
     ("Spænding", "voltage", 2003, "V", "voltage", "measurement", 1.0),
@@ -37,9 +36,9 @@ EM_MINI_GEN4_SENSOR_DEFINITIONS = [
 ]
 
 THREE_EM_63_GEN3_SENSOR_DEFINITIONS = [
-    ("Total strøm", "total_current", None, "A", "current", "measurement", 1.0),
-    ("Total effekt", "total_power", None, "W", "power", "measurement", 1.0),
-    ("Total apparent power", "total_apparent_power", None, "VA", "apparent_power", "measurement", 1.0),
+    ("Total strøm", "total_current", 1011, "A", "current", "measurement", 1.0),
+    ("Total effekt", "total_power", 1013, "W", "power", "measurement", 1.0),
+    ("Total apparent power", "total_apparent_power", 1015, "VA", "apparent_power", "measurement", 1.0),
     ("Total energi", "total_energy", 1162, "Wh", "energy", "total_increasing", 1.0),
     ("Total energi kWh", "total_energy_kwh", 1162, "kWh", "energy", "total_increasing", 0.001),
     ("Total returneret energi", "total_returned_energy", 1164, "Wh", "energy", "total_increasing", 1.0),
@@ -61,17 +60,7 @@ THREE_EM_63_GEN3_SENSOR_DEFINITIONS = [
     ("Fase C power factor", "phase_c_power_factor", 1068, None, "power_factor", "measurement", 1.0),
 ]
 
-COMPUTED_SUMS_BY_MODEL = {
-    MODEL_3EM_63_GEN3: {
-        "total_current": ("phase_a_current", "phase_b_current", "phase_c_current"),
-        "total_power": ("phase_a_power", "phase_b_power", "phase_c_power"),
-        "total_apparent_power": (
-            "phase_a_apparent_power",
-            "phase_b_apparent_power",
-            "phase_c_apparent_power",
-        ),
-    }
-}
+COMPUTED_SUMS_BY_MODEL: dict[str, dict[str, tuple[str, ...]]] = {}
 
 SENSOR_DEFINITIONS_BY_MODEL = {
     MODEL_EM_MINI_GEN4: EM_MINI_GEN4_SENSOR_DEFINITIONS,
