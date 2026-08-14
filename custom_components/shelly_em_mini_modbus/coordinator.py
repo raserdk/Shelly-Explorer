@@ -37,6 +37,9 @@ class ShellyEmMiniModbusCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     def _read_values(self) -> dict[str, Any]:
         data: dict[str, Any] = {}
-        for _label, key, address, _unit, _device_class, _state_class in SENSOR_DEFINITIONS:
-            data[key] = self.client.read_float32_cdab(address)
+        raw_values: dict[int, float] = {}
+        for _label, key, address, _unit, _device_class, _state_class, scale in SENSOR_DEFINITIONS:
+            if address not in raw_values:
+                raw_values[address] = self.client.read_float32_cdab(address)
+            data[key] = raw_values[address] * scale
         return data
